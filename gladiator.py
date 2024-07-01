@@ -27,7 +27,7 @@ class Gladiator:
 
     def attack(self):
         damage = random.randint(1, self.strength)
-        if random.random() < 0.1:
+        if random.random() < 0.20:
             damage *= 2
             print(f"Kritický zásah! {self.name} způsobil dvojnásobné poškození.")
         return damage
