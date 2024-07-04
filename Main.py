@@ -124,8 +124,7 @@ def main():
             break
 
         print(f"{gladiator1.name} má nyní {gladiator1.health:.1f} zdraví.")
-
-        # Apply arena events and display the results only if there is a change
+      
         health_change_1 = arena.apply_random_bonus(gladiator1)
         if health_change_1:
             print(f"{health_change_1} {gladiator1.name} má nyní {gladiator1.health:.1f} zdraví.")
