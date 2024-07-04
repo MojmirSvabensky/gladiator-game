@@ -1,86 +1,143 @@
-import random
 from gladiator import Gladiator
-from Arena import Arena
+from arena import Arena
+import random
+
+def choose_arena(arenas):
+    while True:
+        try:
+            choice = int(input("Vyberte arénu (zadejte číslo): "))
+            if 1 <= choice <= len(arenas):
+                return arenas[choice - 1]
+            else:
+                print("Neplatná volba arény. Zvolte číslo arény.")
+        except ValueError:
+            print("Neplatná volba. Zadejte číslo arény.")
+
+def choose_gladiator_type():
+    types = ["Mnich", "Druid", "Kouzelník", "Lukostřelec", "Šermíř", "Paladin"]
+    print("Dostupné typy gladiátorů:")
+    for i, gladiator_type in enumerate(types, 1):
+        print(f"{i}. {gladiator_type}")
+    
+    while True:
+        try:
+            choice = int(input("Vyberte typ gladiátora (zadejte číslo): "))
+            if 1 <= choice <= len(types):
+                return types[choice - 1]
+            else:
+                print("Neplatná volba typu. Zvolte číslo typu.")
+        except ValueError:
+            print("Neplatná volba. Zadejte číslo typu.")
 
 def main():
+    arenas = [
+        Arena("Bahenní aréna"),
+        Arena("Pouštní aréna"),
+        Arena("Mlžná aréna"),
+        Arena("Horská aréna"),
+        Arena("Ledová aréna")
+    ]
+
     print("Vítejte ve hře Gladiátoři!")
     print("Dostupné arény:")
-    print("1. Lesní aréna")
-    print("2. Pouštní aréna")
-    print("3. Mlžná aréna")
+    for idx, arena in enumerate(arenas, 1):
+        print(f"{idx}. {arena.name}")
+    
+    arena = choose_arena(arenas)
+    print(f"\nBoj začíná na aréně: {arena}")
 
-    arena_choice = int(input("Vyberte arénu (zadejte číslo): "))
-    if arena_choice == 1:
-        arena = Arena("Lesní aréna")
-    elif arena_choice == 2:
-        arena = Arena("Pouštní aréna")
-    elif arena_choice == 3:
-        arena = Arena("Mlžná aréna")
+    print("\nVytvoření Gladiátora 1")
+    name1 = input("Zadejte jméno gladiátora: ")
+    type1 = choose_gladiator_type()
+    gladiator1 = Gladiator(name1, type1)
+
+    opponent_type = input("Chcete bojovat proti jinému hráči (P) nebo proti počítači (C)? ").lower()
+    if opponent_type == 'p':
+        print("\nVytvoření Gladiátora 2")
+        name2 = input("Zadejte jméno gladiátora 2: ")
+        type2 = choose_gladiator_type()
+        gladiator2 = Gladiator(name2, type2)
     else:
-        print("Neplatná volba arény.")
-        return
+        gladiator2 = Gladiator("Computer", random.choice(["Mnich", "Druid", "Kouzelník", "Lukostřelec", "Šermíř", "Paladin"]))
 
-    print(f"\nBoj začíná na aréně: {arena}\n")
+    print(f"\n{gladiator1.name} ({gladiator1.type}) bojuje proti {gladiator2.name} ({gladiator2.type})!\n")
 
-    gladiator1 = create_gladiator(1)
-    gladiator2 = create_gladiator(2)
+    while gladiator1.health > 0 and gladiator2.health > 0:
+        # Player 1's turn
+        print(f"Na řadě je hráč {gladiator1.name}")
+        print(f"{gladiator1.name} má {gladiator1.mana} many.")
+        if gladiator1.ability_cooldown == 0:
+            print(f"{gladiator1.special_ability[0]} je k dispozici.")
+        
+        action1 = input("Vyberte akci (útok/schopnost): ").lower()
+        while action1 not in ["útok", "schopnost"]:
+            print("Neplatná volba akce. Zvolte 'útok' nebo 'schopnost'.")
+            action1 = input("Vyberte akci (útok/schopnost): ").lower()
 
-    print(f"\n{gladiator1.name} bojuje proti {gladiator2.name}!\n")
+        if action1 == "útok":
+            damage = gladiator1.attack()
+            gladiator2.take_damage(damage)
+            print(f"{gladiator1.name} udeřil {gladiator2.name} a způsobil {damage:.1f} poškození.")
+        elif action1 == "schopnost":
+            if gladiator1.ability_cooldown == 0 and gladiator1.mana >= 10:
+                gladiator1.use_ability(gladiator2)
+            else:
+                print(f"{gladiator1.special_ability[0]} není k dispozici.")
+                continue
 
-    while gladiator1.is_alive() and gladiator2.is_alive():
-        bonus_damage_g1 = arena.apply_random_bonus(gladiator1)
-        bonus_damage_g2 = arena.apply_random_bonus(gladiator2)
-
-        if not gladiator2.is_alive():
+        if gladiator2.health <= 0:
+            print(f"{gladiator1.name} vyhrál!")
             break
 
-        attack(gladiator1, gladiator2)
-        print(f"\n{gladiator1.name} udeřil {gladiator2.name} a způsobil {gladiator1.last_damage} poškození.")
-        print(f"{gladiator2.name} má nyní {gladiator2.health} zdraví.")
+        print(f"{gladiator2.name} má nyní {gladiator2.health:.1f} zdraví.")
 
-        if bonus_damage_g1 is not None and bonus_damage_g1 > 0:
-            gladiator1.take_damage(bonus_damage_g1)
-            print(f"{arena}: Gladiátor {gladiator1.name} utrpěl dodatečné poškození od arény!")
-            print(f"{gladiator1.name} má nyní {gladiator1.health} zdraví.")
+        # Player 2's turn
+        print(f"Na řadě je {gladiator2.name}")
+        if opponent_type == 'p':
+            print(f"{gladiator2.name} má {gladiator2.mana} many.")
+            if gladiator2.ability_cooldown == 0:
+                print(f"{gladiator2.special_ability[0]} je k dispozici.")
+            
+            action2 = input("Vyberte akci (útok/schopnost): ").lower()
+            while action2 not in ["útok", "schopnost"]:
+                print("Neplatná volba akce. Zvolte 'útok' nebo 'schopnost'.")
+                action2 = input("Vyberte akci (útok/schopnost): ").lower()
+        else:
+            if gladiator2.ability_cooldown == 0 and gladiator2.mana >= 10:
+                action2 = "schopnost"
+            else:
+                action2 = "útok"
 
-        if not gladiator2.is_alive():
+        if action2 == "útok":
+            damage = gladiator2.attack()
+            gladiator1.take_damage(damage)
+            print(f"{gladiator2.name} udeřil {gladiator1.name} a způsobil {damage:.1f} poškození.")
+        elif action2 == "schopnost":
+            if gladiator2.ability_cooldown == 0 and gladiator2.mana >= 10:
+                gladiator2.use_ability(gladiator1)
+            else:
+                print(f"{gladiator2.special_ability[0]} není k dispozici.")
+                continue
+
+        if gladiator1.health <= 0:
+            print(f"{gladiator2.name} vyhrál!")
             break
 
-        attack(gladiator2, gladiator1)
-        print(f"\n{gladiator2.name} udeřil {gladiator1.name} a způsobil {gladiator2.last_damage} poškození.")
-        print(f"{gladiator1.name} má nyní {gladiator1.health} zdraví.")
+        print(f"{gladiator1.name} má nyní {gladiator1.health:.1f} zdraví.")
 
-        if bonus_damage_g2 is not None and bonus_damage_g2 > 0:
-            gladiator2.take_damage(bonus_damage_g2)
-            print(f"{arena}: Gladiátor {gladiator2.name} utrpěl dodatečné poškození od arény!")
-            print(f"{gladiator2.name} má nyní {gladiator2.health} zdraví.")
+        # Apply arena events and display the results only if there is a change
+        health_change_1 = arena.apply_random_bonus(gladiator1)
+        if health_change_1:
+            print(f"{health_change_1} {gladiator1.name} má nyní {gladiator1.health:.1f} zdraví.")
+        
+        health_change_2 = arena.apply_random_bonus(gladiator2)
+        if health_change_2:
+            print(f"{health_change_2} {gladiator2.name} má nyní {gladiator2.health:.1f} zdraví.")
 
-    if gladiator1.is_alive():
-        print(f"\n{gladiator2.name} je mrtvý! {gladiator1.name} vyhrál!\n")
-    else:
-        print(f"\n{gladiator1.name} je mrtvý! {gladiator2.name} vyhrál!\n")
-
-def create_gladiator(number):
-    name = input(f"Vytvoření Gladiátora {number}\nZadejte jméno gladiátora: ")
-
-    weapon = None
-    while weapon not in ["meč", "sekera", "kopí"]:
-        weapon = input(f"Vyberte zbraň pro {name} (meč/sekera/kopí): ").lower()
-        if weapon not in ["meč", "sekera", "kopí"]:
-            print("Neplatná volba zbraně. Zvolte 'meč', 'sekeru' nebo 'kopí'.")
-
-    armor = None
-    while armor not in ["lehká", "střední", "těžká"]:
-        armor = input(f"Vyberte brnění pro {name} (lehká/střední/těžká): ").lower()
-        if armor not in ["lehká", "střední", "těžká"]:
-            print("Neplatná volba brnění. Zvolte 'lehká', 'střední' nebo 'těžká'.")
-
-    return Gladiator(name, weapon, armor)
-
-def attack(attacker, defender):
-    damage = attacker.attack()
-    defender.take_damage(damage)
-    attacker.last_damage = damage
+        gladiator1.regenerate_mana()
+        gladiator2.regenerate_mana()
+        gladiator1.decrease_cooldown()
+        gladiator2.decrease_cooldown()
 
 if __name__ == "__main__":
     main()
